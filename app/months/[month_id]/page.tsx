@@ -11,12 +11,14 @@ import { useParams } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import { apiAuthPost, apiAuthPatch, UnauthorizedError } from "../../../lib/api";
 import { useApiData } from "../../../lib/useApiData";
+import { useConfirm } from "../../../lib/useConfirm";
 import { addDecimalStrings } from "../../../lib/money";
 import { ProtectedRoute } from "../../../components/ProtectedRoute";
 import { AppShell } from "../../../components/AppShell";
 import { StatusMessage } from "../../../components/ui/StatusMessage";
 import { Button } from "../../../components/ui/Button";
 import { Money } from "../../../components/ui/Money";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -132,11 +134,16 @@ function MonthDetailContent() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [closingOrOpening, setClosingOrOpening] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const { confirm, modalProps } = useConfirm();
 
   const isClosed = summary?.status === "closed";
 
   async function handleClose() {
-    if (!window.confirm(`Close ${formatMonthId(monthId)}? This will generate settlements for all active members.`)) return;
+    if (!(await confirm({
+      title: "Close month?",
+      message: `Close ${formatMonthId(monthId)}? This will generate settlements for all active members.`,
+      variant: "default",
+    }))) return;
     setActionError(null);
     setActionSuccess(null);
     setClosingOrOpening(true);
@@ -154,7 +161,11 @@ function MonthDetailContent() {
   }
 
   async function handleReopen() {
-    if (!window.confirm(`Reopen ${formatMonthId(monthId)}? All settlement records will be deleted.`)) return;
+    if (!(await confirm({
+      title: "Reopen month?",
+      message: `Reopen ${formatMonthId(monthId)}? All settlement records will be deleted.`,
+      variant: "danger",
+    }))) return;
     setActionError(null);
     setActionSuccess(null);
     setClosingOrOpening(true);
@@ -440,6 +451,7 @@ function MonthDetailContent() {
         )}
 
       </div>
+      <ConfirmModal {...modalProps} />
     </AppShell>
   );
 }

@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/* ─── Raw design tokens ─────────────────────────────────────────── */
+:root {
+  /* Backgrounds / elevations */
+  --bg:          #0C0E12;
+  --surface-1:   #141820;
+  --surface-2:   #1C2130;
+  --surface-3:   #232840;
+
+  /* Typography */
+  --fg:          #ECF0F8;
+  --fg-muted:    #7A8599;
+  --fg-subtle:   #3D4558;
+
+  /* Accent — luminous teal */
+  --accent:      #00E5C8;
+  --accent-dim:  rgba(0, 229, 200, 0.12);
+
+  /* Borders */
+  --border:      #252D3A;
+
+  /* Semantic */
+  --success:     #34D399;
+  --danger:      #F87171;
+  --warning:     #FBBF24;
+
+  /* Glows */
+  --glow:        0 0 0 1px rgba(0, 229, 200, 0.25), 0 0 20px rgba(0, 229, 200, 0.28);
+  --glow-sm:     0 0 0 1px rgba(0, 229, 200, 0.18), 0 0 10px rgba(0, 229, 200, 0.18);
+  --text-glow:   0 0 14px rgba(0, 229, 200, 0.7);
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Tailwind v4 theme mapping ─────────────────────────────────── */
+@theme inline {
+  --color-bg:         var(--bg);
+  --color-surface-1:  var(--surface-1);
+  --color-surface-2:  var(--surface-2);
+  --color-surface-3:  var(--surface-3);
+  --color-fg:         var(--fg);
+  --color-fg-muted:   var(--fg-muted);
+  --color-fg-subtle:  var(--fg-subtle);
+  --color-accent:     var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-border:     var(--border);
+  --color-success:    var(--success);
+  --color-danger:     var(--danger);
+  --color-warning:    var(--warning);
+
+  --font-sans:    var(--font-jakarta);
+  --font-display: var(--font-bricolage);
+}
+
+/* ─── Base ──────────────────────────────────────────────────────── */
+html {
+  background-color: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-jakarta, sans-serif);
+  min-height: 100vh;
+}
+
+/* ─── Glow utility classes ──────────────────────────────────────── */
+.glow      { box-shadow: var(--glow); }
+.glow-sm   { box-shadow: var(--glow-sm); }
+.text-glow { text-shadow: var(--text-glow); }
+
+/* ─── Spinner ring ───────────────────────────────────────────────── */
+.spinner-ring {
+  border: 2px solid var(--accent-dim);
+  border-top-color: var(--accent);
+}
+
+/* ─── Animations ────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+@keyframes spin-smooth {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-up      { animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-slide-in-left{ animation: slide-in-left 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-spin-smooth  { animation: spin-smooth 0.75s linear infinite; }
+
+.delay-75  { animation-delay: 75ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-225 { animation-delay: 225ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-375 { animation-delay: 375ms; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 5px; height: 5px; }
+::-webkit-scrollbar-track        { background: var(--bg); }
+::-webkit-scrollbar-thumb        { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--fg-subtle); }

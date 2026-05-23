@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { apiAuthPost, UnauthorizedError } from "../../lib/api";
 import { useApiData } from "../../lib/useApiData";
+import { useConfirm } from "../../lib/useConfirm";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { AppShell } from "../../components/AppShell";
 import { StatusMessage } from "../../components/ui/StatusMessage";
 import { Button } from "../../components/ui/Button";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -477,6 +479,7 @@ function MealsContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const { confirm, modalProps } = useConfirm();
 
   const { data: myLogs, loading: myLoading, error: myError, reload: reloadMy } =
     useApiData<MealLogResponse[]>(`/api/v1/meals/me?month=${selectedMonth}`);
@@ -495,21 +498,24 @@ function MealsContent() {
   const activeLoading = view === "my" ? myLoading : allLoading;
   const activeError = view === "my" ? myError : allError;
 
-  function guardPending(action: () => void) {
+  async function guardPending(action: () => void): Promise<void> {
     if (pending.size > 0) {
-      if (!window.confirm(`You have ${pending.size} unsaved change${pending.size !== 1 ? "s" : ""} — discard them?`)) return;
+      if (!(await confirm({
+        title: "Discard unsaved changes?",
+        message: `You have ${pending.size} unsaved change${pending.size !== 1 ? "s" : ""}. Switch views and discard them?`,
+      }))) return;
       setPending(new Map());
     }
     action();
   }
 
   function tryChangeMonth(newMonth: string) {
-    guardPending(() => setSelectedMonth(newMonth));
+    void guardPending(() => setSelectedMonth(newMonth));
   }
 
   function tryChangeView(newView: "my" | "household") {
     if (newView === view) return;
-    guardPending(() => setView(newView));
+    void guardPending(() => setView(newView));
   }
 
   function handleSetPending(key: string, upsert: MealLogUpsert) {
@@ -580,15 +586,21 @@ function MealsContent() {
     }
   }
 
-  function handleDiscard() {
+  async function handleDiscard() {
     if (pending.size > 0) {
-      if (!window.confirm(`Discard ${pending.size} unsaved change${pending.size !== 1 ? "s" : ""}?`)) return;
+      if (!(await confirm({
+        title: "Discard changes?",
+        message: `Discard ${pending.size} unsaved change${pending.size !== 1 ? "s" : ""}?`,
+        variant: "danger",
+        confirmLabel: "Discard",
+      }))) return;
     }
     setPending(new Map());
     setSaveError("");
   }
 
   return (
+    <>
     <AppShell>
       <div className="p-6 md:p-8 max-w-5xl pb-24">
 
@@ -667,6 +679,8 @@ function MealsContent() {
         onDiscard={handleDiscard}
       />
     </AppShell>
+    <ConfirmModal {...modalProps} />
+    </>
   );
 }
 

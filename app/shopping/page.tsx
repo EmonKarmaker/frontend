@@ -11,6 +11,7 @@ import {
   UnauthorizedError,
 } from "../../lib/api";
 import { useApiData } from "../../lib/useApiData";
+import { useConfirm } from "../../lib/useConfirm";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { AppShell } from "../../components/AppShell";
 import { StatusMessage } from "../../components/ui/StatusMessage";
@@ -18,6 +19,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Card } from "../../components/ui/Card";
 import { Money } from "../../components/ui/Money";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
@@ -944,13 +946,16 @@ interface DeleteItemButtonProps {
 
 function DeleteItemButton({ item, entryItemCount, onSuccess, onReload, onUnauthorized }: DeleteItemButtonProps) {
   const [deleting, setDeleting] = useState(false);
+  const [btnError, setBtnError] = useState<string | null>(null);
+  const { confirm, modalProps } = useConfirm();
 
   async function handleDelete() {
     if (entryItemCount <= 1) {
-      alert("Cannot delete the last item in a shopping entry. Delete the whole entry instead.");
+      setBtnError("Cannot delete the last item in a shopping entry. Delete the whole entry instead.");
+      setTimeout(() => setBtnError(null), 4000);
       return;
     }
-    if (!confirm(`Delete item "${item.name}"?`)) return;
+    if (!(await confirm({ title: "Delete item?", message: `Delete "${item.name}" from this entry?`, variant: "danger", confirmLabel: "Delete" }))) return;
     setDeleting(true);
     try {
       await apiAuthDelete(`/api/v1/shopping/items/${item.id}`);
@@ -959,20 +964,27 @@ function DeleteItemButton({ item, entryItemCount, onSuccess, onReload, onUnautho
     } catch (err: unknown) {
       if (err instanceof UnauthorizedError) { onUnauthorized(); return; }
       const msg = err instanceof Error ? err.message : String(err);
-      alert(msg);
+      setBtnError(msg);
+      setTimeout(() => setBtnError(null), 4000);
     } finally {
       setDeleting(false);
     }
   }
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={deleting}
-      className="text-xs text-fg-muted hover:text-danger transition-colors disabled:opacity-40"
-    >
-      {deleting ? "…" : "Delete"}
-    </button>
+    <>
+      <button
+        onClick={handleDelete}
+        disabled={deleting}
+        className="text-xs text-fg-muted hover:text-danger transition-colors disabled:opacity-40"
+      >
+        {deleting ? "…" : "Delete"}
+      </button>
+      {btnError && (
+        <span className="text-xs text-danger">{btnError}</span>
+      )}
+      <ConfirmModal {...modalProps} />
+    </>
   );
 }
 
@@ -1027,6 +1039,7 @@ function ShoppingContent() {
   const [deleting, setDeleting] = useState(false);
   const [itemFormMode, setItemFormMode] = useState<ItemFormMode>(null);
   const [successMsg, setSuccessMsg] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   function handleSuccess(msg: string) {
     setEntryFormMode(null);
@@ -1051,7 +1064,9 @@ function ShoppingContent() {
       setTimeout(() => setSuccessMsg(""), 4000);
     } catch (err: unknown) {
       if (err instanceof UnauthorizedError) { logout(); return; }
-      alert(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      setDeleteError(msg);
+      setTimeout(() => setDeleteError(""), 4000);
     } finally {
       setDeleting(false);
     }
@@ -1093,9 +1108,12 @@ function ShoppingContent() {
           </div>
         </div>
 
-        {/* Success toast */}
+        {/* Success / error toasts */}
         {successMsg && (
           <p className="text-sm text-success mb-4 animate-fade-up">{successMsg}</p>
+        )}
+        {deleteError && (
+          <p className="text-sm text-danger mb-4 animate-fade-up">{deleteError}</p>
         )}
 
         {/* Delete confirm */}

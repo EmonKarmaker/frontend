@@ -458,6 +458,7 @@ function BillsContent() {
   const [deleteTarget, setDeleteTarget] = useState<UtilityBillResponse | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   const isAdmin = user?.is_admin ?? false;
 
@@ -484,7 +485,8 @@ function BillsContent() {
       }
       const msg = err instanceof Error ? err.message : String(err);
       setSuccessMsg("");
-      alert(msg);
+      setDeleteError(msg);
+      setTimeout(() => setDeleteError(""), 4000);
     } finally {
       setDeleting(false);
     }
@@ -519,9 +521,12 @@ function BillsContent() {
           )}
         </div>
 
-        {/* Success toast */}
+        {/* Success / error toasts */}
         {successMsg && (
           <p className="text-sm text-success mb-4 animate-fade-up">{successMsg}</p>
+        )}
+        {deleteError && (
+          <p className="text-sm text-danger mb-4 animate-fade-up">{deleteError}</p>
         )}
 
         {/* Delete confirm */}

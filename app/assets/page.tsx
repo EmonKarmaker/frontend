@@ -9,6 +9,7 @@ import {
   UnauthorizedError,
 } from "../../lib/api";
 import { useApiData } from "../../lib/useApiData";
+import { useConfirm } from "../../lib/useConfirm";
 import { addDecimalStrings } from "../../lib/money";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { AppShell } from "../../components/AppShell";
@@ -16,6 +17,7 @@ import { StatusMessage } from "../../components/ui/StatusMessage";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Money } from "../../components/ui/Money";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -154,13 +156,15 @@ function AssetsContent() {
   const [disposingId, setDisposingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const { confirm, modalProps } = useConfirm();
 
   async function handleDispose(asset: SharedAssetResponse) {
-    if (
-      !window.confirm(
-        `Mark "${asset.name}" as disposed? This is reversible via editing.`
-      )
-    ) return;
+    if (!(await confirm({
+      title: "Dispose asset?",
+      message: `Mark "${asset.name}" as disposed? This is reversible via editing.`,
+      variant: "danger",
+      confirmLabel: "Dispose",
+    }))) return;
     setActionError(null);
     setActionSuccess(null);
     setDisposingId(asset.id);
@@ -190,6 +194,7 @@ function AssetsContent() {
   ];
 
   return (
+    <>
     <AppShell>
       <div className="p-6 md:p-8 max-w-4xl space-y-8">
 
@@ -305,6 +310,8 @@ function AssetsContent() {
 
       </div>
     </AppShell>
+    <ConfirmModal {...modalProps} />
+    </>
   );
 }
 

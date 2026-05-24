@@ -130,13 +130,14 @@ const NAV_ITEMS: NavItem[] = [
 
 interface AppShellProps {
   children: ReactNode;
-  householdName?: string;
 }
 
-export function AppShell({ children, householdName = "My Household" }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const householdName = user?.household_name ?? "Household";
+  const roleLabel = user?.is_admin ? "Admin" : "Member";
 
   return (
     <div className="flex h-screen bg-bg overflow-hidden">
@@ -146,6 +147,7 @@ export function AppShell({ children, householdName = "My Household" }: AppShellP
         <SidebarContent
           pathname={pathname}
           householdName={householdName}
+          roleLabel={roleLabel}
           onClose={() => {}}
           onLogout={logout}
         />
@@ -162,6 +164,7 @@ export function AppShell({ children, householdName = "My Household" }: AppShellP
             <SidebarContent
               pathname={pathname}
               householdName={householdName}
+              roleLabel={roleLabel}
               onClose={() => setMobileOpen(false)}
               onLogout={logout}
               showClose
@@ -202,12 +205,13 @@ export function AppShell({ children, householdName = "My Household" }: AppShellP
 interface SidebarContentProps {
   pathname: string;
   householdName: string;
+  roleLabel: string;
   onClose: () => void;
   onLogout: () => void;
   showClose?: boolean;
 }
 
-function SidebarContent({ pathname, householdName, onClose, onLogout, showClose }: SidebarContentProps) {
+function SidebarContent({ pathname, householdName, roleLabel, onClose, onLogout, showClose }: SidebarContentProps) {
   return (
     <>
       {/* Brand */}
@@ -262,7 +266,7 @@ function SidebarContent({ pathname, householdName, onClose, onLogout, showClose 
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-fg truncate">{householdName}</p>
-            <p className="text-xs text-fg-muted">Admin</p>
+            <p className="text-xs text-fg-muted">{roleLabel}</p>
           </div>
         </div>
         <button

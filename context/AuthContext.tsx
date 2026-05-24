@@ -23,6 +23,7 @@ import {
 export interface UserResponse {
   id: number;
   household_id: number;
+  household_name: string;
   name: string;
   email: string;
   is_admin: boolean;

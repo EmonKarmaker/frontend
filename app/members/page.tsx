@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { ChangeEvent, ReactNode, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import type { UserResponse } from "../../context/AuthContext";
 import { apiAuthPost, UnauthorizedError } from "../../lib/api";
@@ -13,6 +13,16 @@ import { Input } from "../../components/ui/Input";
 import { Card } from "../../components/ui/Card";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
+
+interface RoomResponse {
+  id: number;
+  household_id: number;
+  name: string;
+  monthly_rent: string;
+  monthly_service_charge: string;
+  created_at: string;
+  updated_at: string;
+}
 
 // Extends the auth context's UserResponse with the left_at field
 // the members endpoint returns but auth/me omits.
@@ -33,6 +43,49 @@ function formatDate(dateStr: string): string {
     month: "short",
     day: "numeric",
   });
+}
+
+/* ── SelectField ───────────────────────────────────────────────────── */
+
+interface SelectFieldProps {
+  label: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
+  disabled?: boolean;
+  children: ReactNode;
+}
+
+function SelectField({ label, value, onChange, disabled, children }: SelectFieldProps) {
+  const id = label.toLowerCase().replace(/\s+/g, "-");
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-fg-muted">
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          id={id}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          className={[
+            "h-10 w-full rounded-lg px-3 pr-9 text-sm bg-surface-2 text-fg",
+            "border border-border appearance-none cursor-pointer",
+            "transition-colors duration-100",
+            "focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/60",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+          ].join(" ")}
+        >
+          {children}
+        </select>
+        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ── Sub-components ────────────────────────────────────────────────── */
@@ -140,15 +193,21 @@ function InviteForm({ onSuccess, onCancel, onReload, onUnauthorized }: InviteFor
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  const { data: rooms, loading: roomsLoading } = useApiData<RoomResponse[]>("/api/v1/rooms");
+
   async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
     setError("");
+    if (!roomId) {
+      setError("Please select a room.");
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await apiAuthPost<InviteUserResponse>("/api/v1/users/invite", {
         name,
         email,
-        room_id: parseInt(roomId, 10),
+        room_id: Number(roomId),
         deposit_amount: depositAmount,
         ...(effectiveMonth.trim() ? { effective_month: effectiveMonth.trim() } : {}),
       });
@@ -189,15 +248,21 @@ function InviteForm({ onSuccess, onCancel, onReload, onUnauthorized }: InviteFor
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}
             />
-            <Input
-              label="Room ID"
-              type="number"
-              required
-              min={1}
+            <SelectField
+              label="Room"
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
-              disabled={submitting}
-            />
+              disabled={submitting || roomsLoading}
+            >
+              <option value="" className="bg-surface-2 text-fg-muted">
+                {roomsLoading ? "Loading rooms…" : "— select a room —"}
+              </option>
+              {rooms?.map((r) => (
+                <option key={r.id} value={String(r.id)} className="bg-surface-2 text-fg">
+                  {r.name}
+                </option>
+              ))}
+            </SelectField>
             <Input
               label="Deposit Amount (৳)"
               type="text"
